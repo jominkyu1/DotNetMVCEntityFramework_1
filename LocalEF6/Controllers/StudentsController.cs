@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -9,6 +10,7 @@ using System.Web.Mvc;
 using LocalEF6.DAL;
 using LocalEF6.Models;
 using Microsoft.Ajax.Utilities;
+using PagedList;
 
 namespace LocalEF6.Controllers
 {
@@ -17,11 +19,59 @@ namespace LocalEF6.Controllers
         private SchoolContext db = new SchoolContext();
 
         // GET: Students
-        public ActionResult Index()
+        // 정렬기준 매개변수
+        public ActionResult Index(string sortOrder, string searchString, string currentFilter, int? page)
         {
-            return View(db.Students.ToList());
-        }
+            ViewBag.CurrentSort = sortOrder;
+            ViewBag.NameSortParam = string.IsNullOrEmpty(sortOrder) ? "name_desc" : ""; //정렬기준 이름
+            // C# string class 의 ==는 equals() 호출
+            ViewBag.DateSortParam = sortOrder == "Date" ? "date_desc" : "Date";
 
+            // 검색
+            if (searchString != null)
+            {
+                page = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+
+            ViewBag.CurrentFilter = searchString;
+
+            var students = from s in db.Students
+                select s;
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                students = students.Where(stu =>
+                    stu.LastName.Contains(searchString) || 
+                    stu.FirstMidName.Contains(searchString));
+            }
+
+            switch (sortOrder)
+            {
+                case "name_desc":
+                    students = students.OrderByDescending(s => s.LastName);
+                    break;
+
+                case "Date":
+                    students = students.OrderBy(s => s.EnrollmentDate);
+                    break;
+
+                case "date_desc":
+                    students = students.OrderByDescending(s => s.EnrollmentDate);
+                    break;
+
+                default:
+                    students = students.OrderBy(s => s.LastName);
+                    break;
+            }
+
+            int pageSize = 3;
+            int pageNumber = (page ?? 1);
+            return View(students.ToPagedList(pageNumber, pageSize));
+        }
         // GET: Students/Details/5
         public ActionResult Details(int? id)
         {
@@ -59,7 +109,7 @@ namespace LocalEF6.Controllers
                     return RedirectToAction("Index");
                 }
             }
-            catch (DataException)
+            catch (RetryLimitExceededException)
             {
                 ModelState.AddModelError("","Try Again");
             }
@@ -100,7 +150,7 @@ namespace LocalEF6.Controllers
 
                     return RedirectToAction("Index");
                 }
-                catch (DataException e)
+                catch (RetryLimitExceededException e)
                 {   
                     ModelState.AddModelError("", "Unable to save changes. Message: " + e.Message);
                 }
@@ -150,7 +200,7 @@ namespace LocalEF6.Controllers
                 db.Students.Remove(student);
                 db.SaveChanges();
             }
-            catch (DataException)
+            catch (RetryLimitExceededException)
             {
                 return RedirectToAction("Delete", new { id = id, saveChangesError = true });
             }

@@ -2,24 +2,21 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.Infrastructure.Design;
 using System.Linq;
 using System.Web;
 
 namespace LocalEF6.Models
 {
-    public class Student
+    public class Student : Person
     {
-        public int ID { get; set; }
-        public string LastName { get; set; }
-        public string FirstMidName { get; set; }
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        [Display(Name="Enrollment Date")]
         public DateTime EnrollmentDate { get; set; }
-
-        public string EmailAddress { get; set; }
 
         [Display(Name = "Enrollments List")]
         public virtual ICollection<Enrollment> Enrollments { get; set; }
-
     }
-    
 }

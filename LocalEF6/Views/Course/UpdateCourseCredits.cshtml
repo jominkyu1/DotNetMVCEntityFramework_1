@@ -1,0 +1,31 @@
+﻿@model LocalEF6.Models.Course
+
+@{
+    ViewBag.Title = "UpdateCourseCredits";
+}
+
+<h2>UpdateCourseCredits</h2>
+
+@if (ViewBag.RowsAffected == null)
+{
+    using (Html.BeginForm())
+    {
+        <p>
+            @Html.TextBox("multiplier") 배수
+        </p>
+        <p>
+            <input type="submit" class="btn btn-outline-primary" value="OK"/>
+        </p>
+    }
+}
+
+@if (ViewBag.RowsAffected != null)
+{
+    <p>
+        업데이트 된 행 : @ViewBag.RowsAffected
+    </p>
+}
+
+<div>
+    @Html.ActionLink("BACK", "Index")
+</div>
